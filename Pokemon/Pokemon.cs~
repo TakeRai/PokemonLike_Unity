@@ -1,0 +1,251 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Pokemon : MonoBehaviour
+{
+
+    public MonsterBase Base { get; set; }
+    //public int Level { get; set; }
+
+    public int HP { get; set; }
+
+    public List<Move> Moves { get; set; }
+
+    public Pokemon(MonsterBase pBase)
+    {
+        Base = pBase;
+        HP = MaxHp;
+
+        Moves = new List<Move>();
+        foreach (var move in Base.LearnableMoves)
+        {
+            //if (move.Level <= Level)
+            Moves.Add(new Move(move.Base));
+
+
+            if (Moves.Count > 4)
+            {
+                break;
+            }
+        }
+    }
+
+    public int Attack
+    {
+        //get { return Mathf.FloorToInt((Base.Attack * 100) / 100f) + 5; }
+        get { return Mathf.FloorToInt(Base.Attack * 2 + 31) + 5; }
+    }
+
+    public int Defence
+    {
+        //get { return Mathf.FloorToInt((Base.Defence * 100) / 100f) + 5; }
+        get { return Mathf.FloorToInt(Base.Defence * 2 + 31) + 5; }
+    }
+
+    public int SpAttack
+    {
+        //get { return Mathf.FloorToInt((Base.SpAttack * 100) / 100f) + 5; }
+        get { return Mathf.FloorToInt(Base.SpAttack * 2 + 31) + 5; }
+    }
+
+    public int SpDefence
+    {
+        //get { return Mathf.FloorToInt((Base.SpDefence * 100) / 100f) + 5; }
+        get { return Mathf.FloorToInt(Base.SpDefence * 2 + 31) + 5; }
+    }
+
+    public int Speed
+    {
+        //get { return Mathf.FloorToInt((Base.Speed * 100) / 100f) + 5; }
+        get { return Mathf.FloorToInt(Base.Speed * 2 + 31) + 5; }
+    }
+
+    public int MaxHp
+    {
+        //get { return Mathf.FloorToInt((Base.MaxHp * 100) / 100f) + 10; }
+        get { return Mathf.FloorToInt(Base.MaxHp * 2 + 31) + 110; }
+    }
+
+
+    //外部更新はなさそうだし大丈夫か　
+    //defenderChangeはdefenderが交換したか否かということ
+    public DamageDetails TakeDamage(BattleUnit attackerUnit,BattleSystem battleSystem,MoveBranch moveBranch)
+    {
+
+        Move attackerMove;
+        Pokemon attacker;
+        Move defenderMove;
+        List<int> defenderHPList;
+        List<int> atteckerHPList;
+        int attackerFlontIndex;
+        int defenderFlontIndex;
+        bool defenderChange;
+        List<List<string>> attackerChoiceRecord;
+        List<List<string>> defenderChoiceRecord;
+        int turnNum = battleSystem.TurnNum;
+
+        float attackRankStatus_A;
+        float spAttackRankStatus_A;
+        float defenceRankStatus_D;
+        float spDefenceRankStatus_D;
+
+        Dictionary<string, bool> attackerMoveBoolDic;
+        Dictionary<string, bool> defenderMoveBoolDic;
+
+        List<List<float>> attackerAilStatusList;
+        List<List<float>> defenderAilStatusList;
+
+        if (attackerUnit == battleSystem.playerUnit)
+        {
+            attackerMove = battleSystem.playerMove;
+            attacker = battleSystem.playerUnit.Pokemon;
+            defenderMove = battleSystem.comMove;
+            defenderHPList = battleSystem.comHPList;
+            atteckerHPList = battleSystem.playerHPList;
+            attackerFlontIndex = battleSystem.playerFlontIndex;
+            defenderFlontIndex = battleSystem.comFlontIndex;
+            defenderChange = battleSystem.comChange;
+
+            attackerChoiceRecord = battleSystem.playerChoiceRecord;
+            defenderChoiceRecord = battleSystem.enemyChoiceRecord;
+
+            attackRankStatus_A = battleSystem.PlayerAttackRankStatus;
+            spAttackRankStatus_A = battleSystem.PlayerspAttackRankStatus;
+            defenceRankStatus_D = battleSystem.EnemyDefenceRankStatus;
+            spDefenceRankStatus_D = battleSystem.EnemyspDefenceRankStatus;
+
+            attackerMoveBoolDic = moveBranch.playerMoveBoolDic;
+            defenderMoveBoolDic = moveBranch.enemyMoveBoolDic;
+            //attackerAilList = battleSystem.ailments.playerAilList;
+            //defenderAilList = battleSystem.ailments.enemyAilList;
+            attackerAilStatusList = battleSystem.ailments.playerAilStatusList;
+            defenderAilStatusList = battleSystem.ailments.enemyAilStatusList;
+
+        }
+        else
+        {
+            attackerMove = battleSystem.comMove;
+            attacker = battleSystem.enemyUnit.Pokemon;
+            defenderMove = battleSystem.playerMove;
+            defenderHPList = battleSystem.playerHPList;
+            atteckerHPList = battleSystem.comHPList;
+            attackerFlontIndex = battleSystem.comFlontIndex;
+            defenderFlontIndex = battleSystem.playerFlontIndex;
+            defenderChange = battleSystem.playerChange;
+
+            attackerChoiceRecord = battleSystem.enemyChoiceRecord;
+            defenderChoiceRecord = battleSystem.playerChoiceRecord;
+
+            attackRankStatus_A = battleSystem.EnemyAttackRankStatus;
+            spAttackRankStatus_A = battleSystem.EnemyspAttackRankStatus;
+            defenceRankStatus_D = battleSystem.PlayerDefenceRankStatus;
+            spDefenceRankStatus_D = battleSystem.PlayerspDefenceRankStatus;
+
+            attackerMoveBoolDic = moveBranch.enemyMoveBoolDic;
+            defenderMoveBoolDic = moveBranch.playerMoveBoolDic;
+            //attackerAilList = battleSystem.ailments.playerAilList;
+            //defenderAilList = battleSystem.ailments.enemyAilList;
+            attackerAilStatusList = battleSystem.ailments.enemyAilStatusList;
+            defenderAilStatusList = battleSystem.ailments.playerAilStatusList;
+
+        }
+
+
+        float defenderType = newTypeChart.GetEffectiveness(attackerMove.Base.Type, this.Base.Type1, battleSystem.isTypeChange) *
+            newTypeChart.GetEffectiveness(attackerMove.Base.Type, this.Base.Type2, battleSystem.isTypeChange);
+
+
+        float attackerType = newTypeChart.GetEffectiveness(defenderMove.Base.Type, attacker.Base.Type1, battleSystem.isTypeChange) *
+            newTypeChart.GetEffectiveness(defenderMove.Base.Type, attacker.Base.Type2, battleSystem.isTypeChange);
+
+        float typematch = 1f;
+        if (attackerMove.Base.Type == attacker.Base.Type1 || attackerMove.Base.Type == attacker.Base.Type2)
+        {
+            typematch = 1.5f;
+        }
+
+        
+
+        var damageDetails = new DamageDetails()
+        {
+            TypeEffectiveness = defenderType,
+            Shield = false,
+            Fainted = false
+        };
+        //ユーザー交換時にはdefenderMoveが空になるのか
+        if (!defenderChange)
+        {
+            if(defenderMoveBoolDic["シールド"])
+                damageDetails.Shield = true;
+        }
+
+        
+
+
+        float attack = (attackerMove.Base.IsMental) ? attacker.SpAttack * spAttackRankStatus_A * attackerAilStatusList[attackerFlontIndex][2]
+            : attacker.Attack * attackRankStatus_A * attackerAilStatusList[attackerFlontIndex][0];
+
+        float defence = (attackerMove.Base.IsMental) ? SpDefence * spDefenceRankStatus_D * defenderAilStatusList[defenderFlontIndex][3]
+            : Defence * defenceRankStatus_D * defenderAilStatusList[defenderFlontIndex][1];
+
+        float modifiers = Random.Range(0.85f, 1f) * defenderType * typematch;
+        float a = (2 * 100 + 10) / 250f;
+        float d = a * attackerMove.Base.Power * ((float)attack / defence) + 2;
+        int damage = Mathf.FloorToInt(d * modifiers);
+
+        //とりあえずダメージ処理から
+        if (attackerMove.Base.IsSituation == true || damageDetails.Shield)
+        {
+            damage = 0;
+        }
+
+        if (attackerMove.Base.Recovery > 0)
+        {
+            if (attackerMove.Base.Name != "ブラックホール" || attackerMoveBoolDic["ブラックホール"])
+            {
+                attacker.HP += Mathf.FloorToInt(attackerMove.Base.Recovery * attacker.MaxHp);
+            }
+
+
+            if (attacker.HP >= attacker.MaxHp)
+            {
+                attacker.HP = attacker.MaxHp;
+            }
+        }
+
+        HP -= damage;
+
+        //つまりhpがなくなればtrueを返すつまりバトル終了か
+        if (HP <=  0)
+        {
+            HP = 0;
+            damageDetails.Fainted = true;
+        }
+
+        defenderHPList[defenderFlontIndex] = HP;
+
+        //あれば続行
+
+        return damageDetails;
+    }
+
+    public Move GetRandomMove()
+    {
+        int r = Random.Range(0, Moves.Count);
+        return Moves[r];
+    }
+}
+
+public class DamageDetails
+{
+    public bool Fainted { get; set; }
+
+    //public float Critical { get; set; }
+    //0は守るじゃない　1は守る　2は失敗
+    public bool Shield { get; set; }
+
+    public float TypeEffectiveness { get; set; }
+}
+
+

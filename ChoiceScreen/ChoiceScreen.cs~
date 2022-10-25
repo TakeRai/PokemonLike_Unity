@@ -1,0 +1,656 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using DG.Tweening;
+
+//変数作ってその中にrandom後の結果入れてやればいいのか
+
+[System.SerializableAttribute]
+public class costList
+{
+    public List<MonsterBase> List = new List<MonsterBase>();
+
+    public costList(List<MonsterBase> list)
+    {
+        List = list;
+    }
+
+}
+
+public class ChoiceScreen : MonoBehaviour
+{
+    [SerializeField] BattleSystem battleSystem;
+    [SerializeField] BattleHud battleHud;
+    [SerializeField] Button goBattleButton;
+    //これは10個
+    //[SerializeField] List<Button> costpanels;
+    [SerializeField] RectTransform costPanels_content;
+    [SerializeField] List<Button> choicedPanels;
+    [SerializeField] Text remainCostText;
+    [SerializeField] Image costCones;
+    [SerializeField] List<costList> costListList = new List<costList>();
+
+    
+
+
+    [System.NonSerialized] public List<costList> playerCostListList = new List<costList>();
+    [System.NonSerialized] public List<costList> comCostListList = new List<costList>();
+
+    List<MonsterBase> displayMonsterBaseLists = new List<MonsterBase>();
+    string choiceName;
+    [System.NonSerialized] public List<MonsterBase> choiceMonsters = new List<MonsterBase>();
+    int playerPartyCost = 15;
+    int comPartyCost = 15;
+
+    [System.NonSerialized] public List<MonsterBase> comParty = new List<MonsterBase>();
+    [System.NonSerialized] public List<MonsterBase> newComParty = new List<MonsterBase>();
+
+    void Start()
+    {
+
+        for(var i=0; i < costPanels_content.transform.childCount; i++)
+        {
+            var num = i;
+
+            //Button costPanel_i = costPanels_content.transform.GetChild(num).GetComponent<Button>();
+            Button costPanel_i = costPanels_content.transform.GetChild(num).GetComponent<Button>();
+            //print("とりあえずおk");
+            costPanel_i.onClick.AddListener(() => decideMonster(num));
+            //costpanels[i].onClick.AddListener(() => decideMonster(num));
+
+        }
+
+        for (var i = 0; i < 3; i++)
+        {
+            var num = i;
+            choicedPanels[i].onClick.AddListener(() => RemoveFromParty(num));
+        }
+    }
+
+    
+
+    void decideMonster(int num)
+    {
+        
+        //これだと9コス後に10コスえらべちゃうから...
+        if(choiceMonsters.Count < 3 && playerPartyCost - (num+1) >= 0 &&
+            !choiceMonsters.Contains(displayMonsterBaseLists[num]))
+        {
+
+            choiceMonsters.Add(displayMonsterBaseLists[num]);
+            int prePlayerPartyCost = playerPartyCost;
+            playerPartyCost -= (num + 1);
+            remainCostText.text = $"{playerPartyCost}";
+
+            //print($"残りコストは{playerPartyCost}");
+            float toukaNum = 0.2f;
+            float toukaTime = 0.3f;
+            Transform costpanel_here = costPanels_content.transform.GetChild(num);
+            Transform costfront_here = costPanels_content.transform.GetChild(num).GetChild(0);
+
+
+            for (var i=0; i<3; i++)
+            {
+                //for (var j = 0; j < choiceMonsters.Count; j++)
+                //{
+
+                //}
+                if(i >= choiceMonsters.Count)
+                {
+                    choicedPanels[i].GetComponent<Image>().enabled = false;
+                    choicedPanels[i].transform.GetChild(1).gameObject.SetActive(true);
+                    choicedPanels[i].transform.GetChild(0).gameObject.SetActive(false);
+                }
+                else
+                {
+                    choicedPanels[i].transform.GetChild(0).GetComponent<Image>().sprite = choiceMonsters[i].TheSprite;
+                    choicedPanels[i].GetComponent<Image>().enabled = true;
+
+                    choicedPanels[i].transform.GetChild(0).gameObject.SetActive(true);
+                    choicedPanels[i].transform.GetChild(1).gameObject.SetActive(false);
+
+
+                    //コストコーン
+                    DOTween.ToAlpha(
+                    () => costpanel_here.GetChild(1).GetComponent<Image>().color,
+                    color => costpanel_here.GetChild(1).GetComponent<Image>().color = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costpanel_here.GetChild(1).GetChild(0).GetComponent<Text>().color,
+                    color => costpanel_here.GetChild(1).GetChild(0).GetComponent<Text>().color = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costpanel_here.GetChild(1).GetChild(0).GetComponent<Outline>().effectColor,
+                    color => costpanel_here.GetChild(1).GetChild(0).GetComponent<Outline>().effectColor = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    costfront_here.GetComponent<Image>().enabled = false;
+                    costfront_here.GetChild(0).gameObject.SetActive(true);
+
+                    //costFronts
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetComponent<Image>().color,
+                    color => costfront_here.GetComponent<Image>().color = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetChild(1).GetChild(0).GetComponent<Text>().color,
+                    color => costfront_here.GetChild(1).GetChild(0).GetComponent<Text>().color = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetChild(1).GetChild(0).GetComponent<Outline>().effectColor,
+                    color => costfront_here.GetChild(1).GetChild(0).GetComponent<Outline>().effectColor = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetChild(2).GetChild(0).GetComponent<Image>().color,
+                    color => costfront_here.GetChild(2).GetChild(0).GetComponent<Image>().color = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetChild(3).GetChild(0).GetComponent<Image>().color,
+                    color => costfront_here.GetChild(3).GetChild(0).GetComponent<Image>().color = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetChild(3).GetChild(1).GetComponent<Image>().color,
+                    color => costfront_here.GetChild(3).GetChild(1).GetComponent<Image>().color = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetChild(3).GetChild(0).GetChild(0).GetComponent<Text>().color,
+                    color => costfront_here.GetChild(3).GetChild(0).GetChild(0).GetComponent<Text>().color = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetChild(3).GetChild(1).GetChild(0).GetComponent<Text>().color,
+                    color => costfront_here.GetChild(3).GetChild(1).GetChild(0).GetComponent<Text>().color = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetChild(3).GetChild(0).GetChild(0).GetComponent<Outline>().effectColor,
+                    color => costfront_here.GetChild(3).GetChild(0).GetChild(0).GetComponent<Outline>().effectColor = color,
+                    toukaNum,
+                    toukaTime
+                    );
+
+                    DOTween.ToAlpha(
+                    () => costfront_here.GetChild(3).GetChild(1).GetChild(0).GetComponent<Outline>().effectColor,
+                    color => costfront_here.GetChild(3).GetChild(1).GetChild(0).GetComponent<Outline>().effectColor = color,
+                    toukaNum,
+                    toukaTime
+                    );
+                }
+            }
+
+            
+
+           //15 - 10
+
+            for (var i= playerPartyCost; i < prePlayerPartyCost; i++)
+            {
+
+                var index_here = i;
+                DOTween.ToAlpha(
+                () => costCones.transform.GetChild(index_here).GetChild(0).GetComponent<Image>().color,
+                color => costCones.transform.GetChild(index_here).GetChild(0).GetComponent<Image>().color = color,
+                0.2f,
+                0.4f
+                );
+            }
+            
+
+        }
+        else
+        {
+            print("入りません");
+        }
+
+
+
+        if(choiceMonsters.Count == 3)
+        {
+            DOTween.ToAlpha(
+            () => goBattleButton.transform.GetChild(0).GetComponent<Image>().color,
+            color => goBattleButton.GetComponent<Image>().color = color,
+            0.4f,
+            0.25f
+            );
+
+            DOTween.ToAlpha(
+            () => goBattleButton.transform.GetChild(1).GetComponent<Image>().color,
+            color => goBattleButton.transform.GetChild(1).GetComponent<Image>().color = color,
+            1f,
+            0.25f
+            );
+
+            DOTween.ToAlpha(
+            () => goBattleButton.transform.GetChild(1).GetChild(0).GetComponent<Text>().color,
+            color => goBattleButton.transform.GetChild(1).GetChild(0).GetComponent<Text>().color = color,
+            1f,
+            0.25f
+            );
+
+            DOTween.ToAlpha(
+            () => goBattleButton.transform.GetChild(1).GetChild(1).GetComponent<Image>().color,
+            color => goBattleButton.transform.GetChild(1).GetChild(1).GetComponent<Image>().color = color,
+            1f,
+            0.25f
+            );
+        }
+    }
+
+    
+
+    public void SetCostText()
+    {
+        remainCostText.text = $"{playerPartyCost}";
+    }
+    
+
+    //まずぬかなあかんのか
+    public void panelImageShuffle()
+    {
+        //これ仮置きね
+        playerCostListList = costListList;
+
+        //これ違う！！！コストの方だ！！！
+        playerPartyCost = 15;
+        choiceMonsters.Clear();
+        displayMonsterBaseLists.Clear();
+        for (var i=0; i<3; i++)
+        {
+            playerCostListList[ComParty[i].Cost - 1].List.Remove(ComParty[i]);
+        }
+        for (var i=0; i < 10; i++)
+        {
+
+            //List<MonsterBase> costList_here = costListList[i];
+            //print(costListList[i].List.Count);
+
+            
+            int r = Random.Range(0, playerCostListList[i].List.Count);
+            
+            var costFronts = costPanels_content.transform.GetChild(i).GetChild(0);
+            Image costImage = costFronts.GetChild(2).GetChild(0).GetComponent<Image>();
+            Text costName = costFronts.GetChild(1).GetChild(0).GetComponent<Text>();
+            Transform chTypeTextAreasParent = costFronts.GetChild(3);
+            List<GameObject> chTypeTextAreas = new();
+            chTypeTextAreas.Add(chTypeTextAreasParent.GetChild(0).gameObject);
+            chTypeTextAreas.Add(chTypeTextAreasParent.GetChild(1).gameObject);
+
+            //print("通過a");
+            battleHud.SetType(playerCostListList[i].List[r],chTypeTextAreas);
+            
+
+            costImage.sprite = playerCostListList[i].List[r].TheSprite;
+            costName.text    = playerCostListList[i].List[r].Name;
+            
+            //displayMonsterBaseLists[i] = costListList[i].List[r];
+            //displayMonsterBaseListsというのは上に表示されてる10コス分のパネル
+            displayMonsterBaseLists.Add(playerCostListList[i].List[r]);
+            //print(costListList[i].List[r]);
+
+
+        }
+        //print(displayMonsterBaseLists.Count);
+
+        //print(displayMonsterBaseLists);
+    }
+
+    public List<MonsterBase> ChoiceMonsters
+    {
+        get { return choiceMonsters; }
+    }
+
+    public void MakeEmptyCostCostList(List<costList> newCostListList)
+    {
+        newCostListList = costListList;
+    }
+
+    public void ComChoiceMonsters()
+    {
+        int rCostMaxInt;
+        comPartyCost = 15;
+        comParty.Clear();
+        battleSystem.comHPList.Clear();
+        //comCostListList使うか知らんけど
+        comCostListList = costListList;
+        for (var i=0; i<3; i++)
+        { 
+            if(comPartyCost > 10)
+            {
+                rCostMaxInt = 10;
+            }
+            else if (i == 2)//ここはcomPartyCost　> 10をスルーしているので自然と10以下を達成する
+            {
+                rCostMaxInt = comPartyCost;
+            }
+            else
+            {
+                rCostMaxInt = comPartyCost - 1;
+
+                
+            }
+            int rCost = Random.Range(0, rCostMaxInt);
+            int rMonster = Random.Range(0, comCostListList[rCost].List.Count);
+            comParty.Add(comCostListList[rCost].List[rMonster]);
+            comPartyCost -= (rCost + 1);
+
+            battleSystem.comHPList.Add(new Pokemon(comParty[i]).HP);
+
+            //これで初戦comPartyの不具合は除けた説
+            comCostListList[rCost].List.RemoveAt(rMonster);
+        }
+
+        //3回目でかつcompartycostが10イカならrCostMaxInt = comPartyCost
+
+        print(comParty[0]);
+        print(comParty[1]);
+        print(comParty[2]);
+
+
+
+    }
+
+    public void chooseComParty_forAgain()
+    {
+        //MakeEmptyCostCostList(comCostListList);
+        //これ仮置きね
+        comCostListList = costListList;
+
+        //てことはこれだな ここではまだ変化してない
+        //print($"comParty[0]は{comParty[0]}");
+        //print($"comParty[1]は{comParty[1]}");
+        //print($"comParty[2]は{comParty[2]}");
+
+        for (var i = 0; i < 3; i++)
+        {
+            comCostListList[ComParty[i].Cost - 1].List.Remove(ComParty[i]);
+            comCostListList[choiceMonsters[i].Cost - 1].List.Remove(choiceMonsters[i]);
+        }
+        comPartyCost = 15;
+        print("もしや");
+        newComParty.Clear();
+        print("これか");
+        int rCostMaxInt;
+        for (var i = 0; i < 3; i++)
+        {
+            if (comPartyCost > 10)
+            {
+                rCostMaxInt = 10;
+            }
+            else if (i == 2)//ここはcomPartyCost > 10をスルーしているので自然と10以下を達成する
+            {
+                rCostMaxInt = comPartyCost;
+            }
+            else
+            {
+                rCostMaxInt = comPartyCost - 1;
+
+
+            }
+            int rCost = Random.Range(0, rCostMaxInt);
+            int rMonster = Random.Range(0, comCostListList[rCost].List.Count);
+
+            newComParty.Add(comCostListList[rCost].List[rMonster]);
+            comPartyCost -= (rCost + 1);
+
+            //ここで既にComParty = newComPartyが聞いている
+            //ということは
+            print(ComParty[i]);
+            print(newComParty[i]);
+
+        }
+        //ここで既にもうcomPartyが変化してる
+
+        print($"comParty[0]は{comParty[0]}");
+        print($"comParty[1]は{comParty[1]}");
+        print($"comParty[2]は{comParty[2]}");
+        print($"newComParty[0]は{newComParty[0]}");
+        print($"newComParty[1]は{newComParty[1]}");
+        print($"newComParty[2]は{newComParty[2]}");
+
+    }
+
+    public List<MonsterBase> ComParty
+    {
+        get { return comParty; }
+    }
+
+    private void RemoveFromParty(int num)
+    {
+        if(num < choiceMonsters.Count)
+        {
+            print(choiceMonsters[num]);
+            int prePlayerPartyCost = playerPartyCost;
+            playerPartyCost += choiceMonsters[num].Cost;
+            remainCostText.text = $"{playerPartyCost}";
+            //costpanels[choiceMonsters[num].Cost - 1].transform.GetChild(2).gameObject.SetActive(true);
+
+            float toukaNum = 1f;
+            float toukaTime = 0.3f;
+            Transform costpanel_here = costPanels_content.GetChild(choiceMonsters[num].Cost - 1);
+            Transform costfront_here = costPanels_content.GetChild(choiceMonsters[num].Cost - 1).GetChild(0);
+
+
+            //コストコーン
+            DOTween.ToAlpha(
+            () => costpanel_here.GetChild(1).GetComponent<Image>().color,
+            color => costpanel_here.GetChild(1).GetComponent<Image>().color = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costpanel_here.GetChild(1).GetChild(0).GetComponent<Text>().color,
+            color => costpanel_here.GetChild(1).GetChild(0).GetComponent<Text>().color = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costpanel_here.GetChild(1).GetChild(0).GetComponent<Outline>().effectColor,
+            color => costpanel_here.GetChild(1).GetChild(0).GetComponent<Outline>().effectColor = color,
+            toukaNum,
+            toukaTime
+            );
+
+            //costFronts
+            //DOTween.ToAlpha(
+            //() => costfront_here.GetChild(1).GetComponent<Image>().color,
+            //color => costfront_here.GetChild(1).GetComponent<Image>().color = color,
+            //toukaNum,
+            //toukaTime
+            //);
+
+            costfront_here.GetComponent<Image>().enabled = true;
+            costfront_here.GetChild(0).gameObject.SetActive(false);
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetComponent<Image>().color,
+            color => costfront_here.GetComponent<Image>().color = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetChild(1).GetChild(0).GetComponent<Text>().color,
+            color => costfront_here.GetChild(1).GetChild(0).GetComponent<Text>().color = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetChild(1).GetChild(0).GetComponent<Outline>().effectColor,
+            color => costfront_here.GetChild(1).GetChild(0).GetComponent<Outline>().effectColor = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetChild(2).GetChild(0).GetComponent<Image>().color,
+            color => costfront_here.GetChild(2).GetChild(0).GetComponent<Image>().color = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetChild(3).GetChild(0).GetComponent<Image>().color,
+            color => costfront_here.GetChild(3).GetChild(0).GetComponent<Image>().color = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetChild(3).GetChild(1).GetComponent<Image>().color,
+            color => costfront_here.GetChild(3).GetChild(1).GetComponent<Image>().color = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetChild(3).GetChild(0).GetChild(0).GetComponent<Text>().color,
+            color => costfront_here.GetChild(3).GetChild(0).GetChild(0).GetComponent<Text>().color = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetChild(3).GetChild(1).GetChild(0).GetComponent<Text>().color,
+            color => costfront_here.GetChild(3).GetChild(1).GetChild(0).GetComponent<Text>().color = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetChild(3).GetChild(0).GetChild(0).GetComponent<Outline>().effectColor,
+            color => costfront_here.GetChild(3).GetChild(0).GetChild(0).GetComponent<Outline>().effectColor = color,
+            toukaNum,
+            toukaTime
+            );
+
+            DOTween.ToAlpha(
+            () => costfront_here.GetChild(3).GetChild(1).GetChild(0).GetComponent<Outline>().effectColor,
+            color => costfront_here.GetChild(3).GetChild(1).GetChild(0).GetComponent<Outline>().effectColor = color,
+            toukaNum,
+            toukaTime
+            );
+
+
+
+
+            choiceMonsters.RemoveAt(num);
+            
+
+            for (var i = 0; i < 3; i++)
+            {
+                if (i >= choiceMonsters.Count)
+                {
+                    //choicedPanels[i].gameObject.SetActive(false);
+                    //choicedPanels[i].transform.GetChild(1).gameObject.SetActive(true);
+                    //choicedPanels[i].transform.GetChild(0).gameObject.SetActive(false);
+
+                    choicedPanels[i].GetComponent<Image>().enabled = false;
+                    choicedPanels[i].transform.GetChild(1).gameObject.SetActive(true);
+                    choicedPanels[i].transform.GetChild(0).gameObject.SetActive(false);
+
+
+                }
+                else
+                {
+
+                    //choicedPanels[i].transform.GetChild(0).GetComponent<Image>().sprite = choiceMonsters[i].TheSprite;
+                    //choicedPanels[i].transform.GetChild(0).gameObject.SetActive(true);
+                    //choicedPanels[i].transform.GetChild(1).gameObject.SetActive(false);
+
+                    choicedPanels[i].transform.GetChild(0).GetComponent<Image>().sprite = choiceMonsters[i].TheSprite;
+                    choicedPanels[i].GetComponent<Image>().enabled = true;
+
+                    choicedPanels[i].transform.GetChild(0).gameObject.SetActive(true);
+                    choicedPanels[i].transform.GetChild(1).gameObject.SetActive(false);
+
+
+                }
+            }
+
+            if (choiceMonsters.Count < 3)
+            {
+
+
+                DOTween.ToAlpha(
+                () => goBattleButton.transform.GetChild(0).GetComponent<Image>().color,
+                color => goBattleButton.GetComponent<Image>().color = color,
+                0.08f,
+                0.25f
+                );
+
+                DOTween.ToAlpha(
+                () => goBattleButton.transform.GetChild(1).GetComponent<Image>().color,
+                color => goBattleButton.transform.GetChild(1).GetComponent<Image>().color = color,
+                0.22f,
+                0.25f
+                );
+
+                DOTween.ToAlpha(
+                () => goBattleButton.transform.GetChild(1).GetChild(0).GetComponent<Text>().color,
+                color => goBattleButton.transform.GetChild(1).GetChild(0).GetComponent<Text>().color = color,
+                0.22f,
+                0.25f
+                );
+
+                DOTween.ToAlpha(
+                () => goBattleButton.transform.GetChild(1).GetChild(1).GetComponent<Image>().color,
+                color => goBattleButton.transform.GetChild(1).GetChild(1).GetComponent<Image>().color = color,
+                0.22f,
+                0.25f
+                );
+
+            }
+
+            for (var i = prePlayerPartyCost; i < playerPartyCost; i++)
+            {
+
+                var index_here = i;
+                DOTween.ToAlpha(
+                () => costCones.transform.GetChild(index_here).GetChild(0).GetComponent<Image>().color,
+                color => costCones.transform.GetChild(index_here).GetChild(0).GetComponent<Image>().color = color,
+                1f,
+                0.4f
+                );
+            }
+        }
+
+        
+
+    }
+
+}
+
+
